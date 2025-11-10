@@ -5,25 +5,38 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 )
 
 func QueryLLM(question string) (string, error) {
-	// Endpoint gratuito da HuggingFace
-	url := "https://api-inference.huggingface.co/models/google/flan-t5-base"
+	url := "https://router.huggingface.co/v1/chat/completions"
+	model := "openai/gpt-oss-20b"
 
 	apiKey := os.Getenv("HF_API_KEY")
 	if apiKey == "" {
-		return "", errors.New("chave da API não encontrada no .env")
+		return "", errors.New("HF_API_KEY não encontrado. Defina no .env ou variável de ambiente")
 	}
 
-	// Corpo da requisição
-	body := map[string]string{"inputs": question}
-	jsonData, _ := json.Marshal(body)
+	// Payload compatível com API atual
+	payload := map[string]interface{}{
+		"model": model,
+		"messages": []map[string]string{
+			{"role": "user", "content": question},
+		},
+		"stream": false,
+	}
 
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -34,20 +47,35 @@ func QueryLLM(question string) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
 	if resp.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
 		return "", fmt.Errorf("erro da API: %s", string(body))
 	}
 
-	var response []map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&response)
+	// Estrutura da resposta da API
+	var response struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+		OutputText string `json:"output_text"` // alternativo se existir
+	}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", err
+	}
 
-	// Extrai texto da resposta
-	if len(response) > 0 {
-		generatedText, ok := response[0]["generated_text"].(string)
-		if ok {
-			return generatedText, nil
-		}
+	// Priorize choices[0].message.content
+	if len(response.Choices) > 0 && response.Choices[0].Message.Content != "" {
+		return response.Choices[0].Message.Content, nil
+	}
+	if response.OutputText != "" {
+		return response.OutputText, nil
 	}
 
 	return "", errors.New("resposta inesperada da API")

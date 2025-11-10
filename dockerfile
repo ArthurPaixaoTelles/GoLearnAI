@@ -1,13 +1,13 @@
 # Stage 1: Builder
 FROM golang:1.22-alpine AS builder
 
-# Instala dependências básicas
+# Dependências básicas
 RUN apk add --no-cache git ca-certificates
 
-# Define diretório de trabalho
+# Diretório de trabalho
 WORKDIR /app
 
-# Copia arquivos go.mod/go.sum e baixa dependências
+# Copia go.mod e go.sum e baixa dependências
 COPY go.mod go.sum ./
 RUN go mod download
 
@@ -20,17 +20,14 @@ RUN go build -o app main.go
 # Stage 2: Runtime
 FROM alpine:latest
 
-# Diretório de trabalho
 WORKDIR /root/
 
 # Copia binário do builder
 COPY --from=builder /app/app .
 
-# Copia .env se necessário (opcional)
-# COPY --from=builder /app/.env .env
-
-# Porta que o container vai expor
+# Porta do container
 EXPOSE 8080
 
-# Comando para rodar o servidor
+# Variável de ambiente do HuggingFace será passada na execução
+# CMD inicializa o servidor
 CMD ["./app"]

@@ -1,0 +1,79 @@
+package handlers
+
+import (
+	"bytes"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+// TestStatusHandler: Verifica se a rota /status devolve 200 e o JSON esperado
+func TestStatusHandler(t *testing.T) {
+	// 1. Cria a requisição
+	req, err := http.NewRequest("GET", "/status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// 2. Grava a resposta
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(StatusHandler)
+	handler.ServeHTTP(rr, req)
+
+	// 3. Valida o Código HTTP
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("Status code errado: recebido %v esperado %v",
+			status, http.StatusOK)
+	}
+
+	// 4. Valida o Corpo (JSON)
+	expected := `{"status":"ok","message":"servidor ativo"}`
+	if rr.Body.String() != expected {
+		t.Errorf("Body inesperado: recebido %v esperado %v",
+			rr.Body.String(), expected)
+	}
+}
+
+// TestHomeHandler: Verifica se a raiz devolve 200 e a mensagem de boas-vindas
+func TestHomeHandler(t *testing.T) {
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(HomeHandler)
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("Status code errado: recebido %v esperado %v",
+			status, http.StatusOK)
+	}
+
+	// Verifica se contém parte da mensagem esperada
+	if !strings.Contains(rr.Body.String(), "Bem-vindo ao servidor Go") {
+		t.Errorf("Body não contém a mensagem de boas-vindas esperada")
+	}
+}
+
+// TestAskHandler_Empty: Verifica se a API rejeita perguntas vazias (Erro 400)
+// Isso é ótimo pois testa a lógica SEM chamar a API externa (Hugging Face)
+func TestAskHandler_Empty(t *testing.T) {
+	// Cria um JSON com pergunta vazia
+	payload := []byte(`{"question": ""}`)
+
+	req, err := http.NewRequest("POST", "/api/prompt", bytes.NewBuffer(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(AskHandler)
+	handler.ServeHTTP(rr, req)
+
+	// Esperamos erro 400 (Bad Request)
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("Deveria retornar erro 400 para pergunta vazia, mas retornou: %v", status)
+	}
+}

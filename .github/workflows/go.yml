@@ -1,35 +1,70 @@
-name: Go Docker CI
+name: Pipeline DevOps - IsCoolGPT
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main", "staging" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main", "staging", "dev" ]
 
 jobs:
-  build:
+  # ======================================================
+  # JOB 1: CI - Qualidade e Testes
+  # ======================================================
+  quality-check:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checar código
-        uses: actions/checkout@v3
+    - name: Baixar código
+      uses: actions/checkout@v3
 
-      - name: Configurar Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'  # ou a versão que você está usando
+    - name: Configurar Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
 
-      - name: Instalar dependências
-        run: go mod tidy
+    - name: Instalar dependências
+      run: go mod download
 
-      - name: Build do projeto
-        run: go build -v ./...
+    - name: Verificar integridade (Tidy)
+      run: go mod tidy
 
-      - name: Testar (opcional)
-        run: go test -v ./...
+    - name: Rodar Testes Unitários
+      run: go test -v ./...
 
-      - name: Build da imagem Docker
-        run: docker build -t golang-llm .
+  # ======================================================
+  # JOB 2: CD - Build e Deploy para AWS
+  # (Só roda se os testes passarem e for na branch main/staging)
+  # ======================================================
+  deploy-to-ecr:
+    needs: quality-check
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Baixar código
+      uses: actions/checkout@v3
 
+    # AQUI ENTRA A MÁGICA DAS CHAVES QUE VOCÊ PEGOU
+    - name: Configurar Credenciais AWS
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login no Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build e Push da Imagem Docker
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        echo "Construindo imagem Docker..."
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+        
+        echo "Enviando para a AWS ECR..."
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest

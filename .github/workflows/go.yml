@@ -63,7 +63,7 @@ jobs:
     # Opcional: Forçar o ECS a atualizar o serviço para pegar a imagem nova imediatamente
     - name: Atualizar Serviço ECS
       run: |
-        aws ecs update-service --cluster golearnai --service service-golearnai --force-new-deployment
+        aws ecs update-service --cluster golearnai --service task-golearnai-service-nzkciq20 --force-new-deployment
 
   # ==========================================
   # JOB 3: Deploy Production (Só na branch 'main')
@@ -102,4 +102,4 @@ jobs:
 
     - name: Atualizar Serviço ECS
       run: |
-        aws ecs update-service --cluster golearnai --service service-golearnai --force-new-deployment
+        aws ecs update-service --cluster golearnai --service task-golearnai-service-nzkciq20 --force-new-deployment

@@ -1,35 +1,105 @@
-name: Go Docker CI
+name: Pipeline DevOps IsCoolGPT
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main", "staging", "dev" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main", "staging" ]
 
 jobs:
-  build:
+  # ==========================================
+  # JOB 1: Testes (Roda em TODAS as branches)
+  # ==========================================
+  tests:
+    name: 🧪 Rodar Testes
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checar código
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    - run: go mod download
+    
+    # Roda os testes que você já tem (handlers_test.go)
+    - name: Executar Go Test
+      run: go test -v ./...
 
-      - name: Configurar Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'  # ou a versão que você está usando
+  # ==========================================
+  # JOB 2: Deploy Staging (Só na branch 'staging')
+  # ==========================================
+  deploy-staging:
+    name: 🚀 Deploy Staging (AWS)
+    needs: tests
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configurar AWS
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Instalar dependências
-        run: go mod tidy
+    - name: Login ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    
+    - name: Build & Push (Tag Staging)
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: staging-${{ github.sha }} # Tag específica para saber que é staging
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        # Também atualizamos a latest para garantir que o ECS pegue a versão nova se reiniciar
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+        
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Build do projeto
-        run: go build -v ./...
+    # Opcional: Forçar o ECS a atualizar o serviço para pegar a imagem nova imediatamente
+    - name: Atualizar Serviço ECS
+      run: |
+        aws ecs update-service --cluster golearnai --service task-golearnai-service-nzkciq20 --force-new-deployment
 
-      - name: Testar (opcional)
-        run: go test -v ./...
+  # ==========================================
+  # JOB 3: Deploy Production (Só na branch 'main')
+  # ==========================================
+  deploy-production:
+    name: 🚀 Deploy Production (AWS)
+    needs: tests
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configurar AWS
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.ACCESS_KEY }}             
+        aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Build da imagem Docker
-        run: docker build -t golang-llm .
+    - name: Login ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      
+    - name: Build & Push (Production)
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+        
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+    - name: Atualizar Serviço ECS
+      run: |
+        aws ecs update-service --cluster golearnai --service task-golearnai-service-nzkciq20 --force-new-deployment

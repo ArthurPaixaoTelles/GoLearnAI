@@ -9,12 +9,14 @@ import (
 
 // RegisterRoutes define todas as rotas do sistema.
 func RegisterRoutes(r *mux.Router) {
-	// rota raiz
-	r.HandleFunc("/", HomeHandler).Methods("GET")
-
-	// rota de status (pra teste)
+	// 1. Rotas da API (Têm prioridade)
 	r.HandleFunc("/status", StatusHandler).Methods("GET")
 	r.HandleFunc("/api/prompt", AskHandler).Methods("POST")
+
+	// 2. Rota para servir o Front-end (Arquivos Estáticos)
+	// Isso serve o index.html quando acessa a raiz "/"
+	fs := http.FileServer(http.Dir("./static"))
+	r.PathPrefix("/").Handler(fs)
 }
 
 // HomeHandler responde à rota raiz

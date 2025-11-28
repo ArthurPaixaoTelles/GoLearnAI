@@ -1,6 +1,3 @@
-# ============================
-# Stage 1: Build
-# ============================
 FROM golang:1.22-alpine AS builder
 
 LABEL stage="builder"
@@ -36,7 +33,7 @@ WORKDIR /home/appuser
 
 # Copia o binário do estágio anterior
 COPY --from=builder /app/app .
-
+COPY static ./static
 # Define permissões e muda o usuário
 RUN chown appuser:appuser ./app
 USER appuser

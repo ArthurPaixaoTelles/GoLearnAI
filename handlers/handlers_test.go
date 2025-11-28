@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 )
 
@@ -32,28 +31,6 @@ func TestStatusHandler(t *testing.T) {
 	if rr.Body.String() != expected {
 		t.Errorf("Body inesperado: recebido %v esperado %v",
 			rr.Body.String(), expected)
-	}
-}
-
-// TestHomeHandler: Verifica se a raiz devolve 200 e a mensagem de boas-vindas
-func TestHomeHandler(t *testing.T) {
-	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(HomeHandler)
-	handler.ServeHTTP(rr, req)
-
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("Status code errado: recebido %v esperado %v",
-			status, http.StatusOK)
-	}
-
-	// Verifica se contém parte da mensagem esperada
-	if !strings.Contains(rr.Body.String(), "Bem-vindo ao servidor Go") {
-		t.Errorf("Body não contém a mensagem de boas-vindas esperada")
 	}
 }
 

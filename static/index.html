@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IsCoolGPT - Cloud Assistant</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f4f4f9; }
+        .chat-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input { width: 70%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #response { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 4px; display: none; }
+        .loading { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="chat-box">
+        <h1>☁️ IsCoolGPT</h1>
+        <p>Pergunte qualquer coisa para a IA:</p>
+        <div>
+            <input type="text" id="question" placeholder="Ex: O que é Docker?">
+            <button onclick="askAI()">Enviar</button>
+        </div>
+        <div id="response"></div>
+    </div>
+
+    <script>
+        async function askAI() {
+            const question = document.getElementById('question').value;
+            const respDiv = document.getElementById('response');
+            
+            if (!question) return alert("Digite uma pergunta!");
+
+            respDiv.style.display = 'block';
+            respDiv.innerHTML = '<span class="loading">Pensando... (pode demorar se o servidor estiver frio)</span>';
+
+            try {
+                const res = await fetch('/api/prompt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: question })
+                });
+
+                const data = await res.json();
+                
+                if (res.ok) {
+                    respDiv.innerText = data.answer;
+                } else {
+                    respDiv.innerText = "Erro: " + (data.error || "Falha na comunicação");
+                }
+            } catch (e) {
+                respDiv.innerText = "Erro de conexão: " + e.message;
+            }
+        }
+    </script>
+</body>
+</html>

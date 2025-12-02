@@ -71,17 +71,20 @@ Acesse o chat interativo através do Load Balancer da AWS:
 
 
 ### Linux / macOS / Bash
-
-curl -X POST "http://alb-golearnai-2009330452.us-east-2.elb.amazonaws.com/api/prompt" \
+curl -X POST <http://alb-golearnai-2009330452.us-east-2.elb.amazonaws.com/api/prompt> \
      -H "Content-Type: application/json" \
      -d '{"question": "Qual a vantagem de usar Docker?"}'
 
+
 ### Windows (PowerShell)
 
-Invoke-RestMethod -Uri "http://alb-golearnai-2009330452.us-east-2.elb.amazonaws.com/api/prompt" `
+$body = @{ question = "Qual a vantagem de usar Docker?" } | ConvertTo-Json
+
+Invoke-RestMethod -Uri <http://alb-golearnai-2009330452.us-east-2.elb.amazonaws.com/api/prompt> `
     -Method POST `
     -Body $body `
     -ContentType "application/json"
+
 
 
 ---

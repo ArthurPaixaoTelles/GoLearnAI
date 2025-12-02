@@ -9,24 +9,24 @@ import (
 
 // TestStatusHandler: Verifica se a rota /status devolve 200 e o JSON esperado
 func TestStatusHandler(t *testing.T) {
-	// 1. Cria a requisição
+	// Cria a requisição
 	req, err := http.NewRequest("GET", "/status", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// 2. Grava a resposta
+	//  Grava a resposta
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(StatusHandler)
 	handler.ServeHTTP(rr, req)
 
-	// 3. Valida o Código HTTP
+	// Valida o Código HTTP
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Status code errado: recebido %v esperado %v",
 			status, http.StatusOK)
 	}
 
-	// 4. Valida o Corpo (JSON)
+	// Valida o Corpo (JSON)
 	expected := `{"status":"ok","message":"servidor ativo"}`
 	if rr.Body.String() != expected {
 		t.Errorf("Body inesperado: recebido %v esperado %v",
@@ -35,7 +35,6 @@ func TestStatusHandler(t *testing.T) {
 }
 
 // TestAskHandler_Empty: Verifica se a API rejeita perguntas vazias (Erro 400)
-// Isso é ótimo pois testa a lógica SEM chamar a API externa (Hugging Face)
 func TestAskHandler_Empty(t *testing.T) {
 	// Cria um JSON com pergunta vazia
 	payload := []byte(`{"question": ""}`)

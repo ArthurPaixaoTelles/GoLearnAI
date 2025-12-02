@@ -10,8 +10,9 @@ import (
 	"os"
 )
 
+var HuggingFaceURL = "https://router.huggingface.co/v1/chat/completions"
+
 func QueryLLM(question string) (string, error) {
-	url := "https://router.huggingface.co/v1/chat/completions"
 	model := "openai/gpt-oss-20b"
 
 	apiKey := os.Getenv("HF_API_KEY")
@@ -33,7 +34,7 @@ func QueryLLM(question string) (string, error) {
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", HuggingFaceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}

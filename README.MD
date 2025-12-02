@@ -69,8 +69,39 @@ Acesse o chat interativo através do Load Balancer da AWS:
 
 ### 🧪 Testando via Terminal (API)
 
-#### 🐧 Linux / macOS / Bash
-```bash
-curl -X POST [http://alb-golearnai-2009330452.us-east-2.elb.amazonaws.com/api/prompt](http://alb-golearnai-2009330452.us-east-2.elb.amazonaws.com/api/prompt) \
+
+### Linux / macOS / Bash
+
+curl -X POST "http://alb-golearnai-2009330452.us-east-2.elb.amazonaws.com/api/prompt" \
      -H "Content-Type: application/json" \
      -d '{"question": "Qual a vantagem de usar Docker?"}'
+
+### Windows (PowerShell)
+
+Invoke-RestMethod -Uri "http://alb-golearnai-2009330452.us-east-2.elb.amazonaws.com/api/prompt" `
+    -Method POST `
+    -Body $body `
+    -ContentType "application/json"
+
+
+---
+
+## 🛡️ Monitoramento e Custos
+
+- **CloudWatch Logs:** logs completos + alarmes de CPU (>80%)  
+- **Auto Scaling:** 1–3 tarefas Fargate, baseado em CPU  
+- **AWS Budgets:** alertas configurados  
+- **FinOps:** uso de Fargate Spot + imagem leve reduz drasticamente o custo
+
+---
+
+## 📄 Licença
+
+Distribuído sob a licença **MIT**.
+
+---
+
+## 🤝 Contribuição
+
+Contribuições são bem-vindas!  
+Sinta-se à vontade para abrir uma *issue* ou enviar um *pull request*.

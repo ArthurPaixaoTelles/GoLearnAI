@@ -1,28 +1,19 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-// RegisterRoutes define todas as rotas do sistema.
 func RegisterRoutes(r *mux.Router) {
-	// 1. Rotas da API (Têm prioridade)
+	//  Rotas da API (Têm prioridade)
 	r.HandleFunc("/status", StatusHandler).Methods("GET")
 	r.HandleFunc("/api/prompt", AskHandler).Methods("POST")
 
-	// 2. Rota para servir o Front-end (Arquivos Estáticos)
-	// Isso serve o index.html quando acessa a raiz "/"
+	//  Rota para servir o Front-end (Arquivos Estáticos)
 	fs := http.FileServer(http.Dir("./static"))
 	r.PathPrefix("/").Handler(fs)
-}
-
-// HomeHandler responde à rota raiz
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, "🏠 Bem-vindo ao servidor Go! Essa tela está vindo do routes.go que está na pasta handlers")
 }
 
 // StatusHandler responde com um JSON de status simples

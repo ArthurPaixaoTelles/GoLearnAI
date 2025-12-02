@@ -14,7 +14,6 @@ type AnswerResponse struct {
 	Answer string `json:"answer"`
 }
 
-// Handler principal
 func AskHandler(w http.ResponseWriter, r *http.Request) {
 	var req QuestionRequest
 	err := json.NewDecoder(r.Body).Decode(&req)

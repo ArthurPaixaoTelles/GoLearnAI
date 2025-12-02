@@ -33,23 +33,20 @@ WORKDIR /home/appuser
 
 # Copia o binário do estágio anterior
 COPY --from=builder /app/app .
+# ... (No Stage 2, logo abaixo de COPY --from=builder /app/app .)
 COPY static ./static
 # Define permissões e muda o usuário
 RUN chown appuser:appuser ./app
 USER appuser
 
-# Define variáveis de ambiente padrão
 ENV PORT=8080
 ENV HF_API_KEY=""
 
-# Expondo a porta da API
 EXPOSE 8080
 
-# Labels úteis para rastreamento
 LABEL org.opencontainers.image.title="Go LLM API" \
       org.opencontainers.image.description="API em Go com integração HuggingFace" \
       org.opencontainers.image.version="1.0" \
       maintainer="seu_nome <seu_email>"
 
-# Comando para iniciar o servidor
 CMD ["./app"]

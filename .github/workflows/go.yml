@@ -20,7 +20,6 @@ jobs:
         go-version: '1.22'
     - run: go mod download
     
-    # Roda os testes que você já tem (handlers_test.go)
     - name: Executar Go Test
       run: go test -v ./...
 
@@ -60,10 +59,9 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-    # Opcional: Forçar o ECS a atualizar o serviço para pegar a imagem nova imediatamente
     - name: Atualizar Serviço ECS
       run: |
-        aws ecs update-service --cluster golearnai --service task-golearnai-service-nzkciq20 --force-new-deployment
+        aws ecs update-service --cluster golearnai --service task-golearnai-service-xlzakkwt --force-new-deployment
 
   # ==========================================
   # JOB 3: Deploy Production (Só na branch 'main')
@@ -102,4 +100,4 @@ jobs:
 
     - name: Atualizar Serviço ECS
       run: |
-        aws ecs update-service --cluster golearnai --service task-golearnai-service-nzkciq20 --force-new-deployment
+        aws ecs update-service --cluster golearnai --service task-golearnai-service-xlzakkwt --force-new-deployment
